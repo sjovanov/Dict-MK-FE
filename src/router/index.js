@@ -1,5 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import Sentence from "../views/Sentence";
+import Login from "@/views/Login";
+import AllSentencesForUser from "@/views/AllSentencesForUser";
+import EditSentence from "@/views/EditSentence";
+import {TokenService} from "@/services/token";
 
 const routes = [
   {
@@ -8,18 +13,45 @@ const routes = [
     component: Home
   },
   {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    path: '/sentence',
+    name: 'Sentence',
+    component: Sentence,
+    meta: {requiresAuth: true},
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login
+  },
+  {
+    path: '/all-sentences',
+    name: 'AllSentencesForUser',
+    component: AllSentencesForUser,
+    meta: {requiresAuth: true},
+  },
+  {
+    path: '/edit-sentence/:id',
+    name: 'EditSentence',
+    component: EditSentence,
+    meta: {requiresAuth: true},
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, from, next) => {
+  if(to.matched.some(record => record.meta.requiresAuth)) {
+    if (TokenService.getToken()) {
+      next()
+      return
+    }
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

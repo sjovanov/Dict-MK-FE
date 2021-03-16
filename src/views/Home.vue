@@ -1,5 +1,11 @@
 <template>
   <div class="home container">
+    <div class="row">
+      <a :href="'/login'" class="bg-light btn text-primary">Логирај се</a>
+      <a :href="'/'" class="btn text-white btn-info">Речник</a>
+      <a :href="'/sentence'" class="bg-light btn text-primary" v-if="token !== null">Сегментација</a>
+      <a :href="'/all-sentences'" class="bg-light btn text-primary" v-if="token !== null">Сите реченици</a>
+    </div>
     <div class="text-center">
       <h1 class="h1 mt-5 mb-5">Речник</h1>
     </div>
@@ -13,14 +19,14 @@
           <label for="offsetInput">Поместување</label>
           <input type="number" v-model="offset" class="form-control" id="offsetInput">
         </div>
-        <button class="btn btn-primary" v-on:click="getWords(limit,offset)">Прикажи резултати</button>
+        <button class="btn btn-primary" id="btnP" v-on:click="getWords(limit,offset)">Прикажи резултати</button>
       </div>
       <div class="text-center col-6">
         <div class="form-group">
           <label for="wordInput">Збор</label>
           <input type="text" v-model="wordForSearching" class="form-control" id="wordInput">
         </div>
-        <button class="btn btn-primary" v-on:click="getSingleWord(wordForSearching)">Пребарај по збор</button>
+        <button class="btn btn-primary" id="btnFS" v-on:click="getSingleWord(wordForSearching)">Пребарај по збор</button>
         <p class="mt-3">{{ tmpSearching }}</p>
       </div>
     </div>
@@ -42,7 +48,7 @@
             <span>{{ getTypeVerb(word.encoding.charAt(1)) }}</span><br>
             <span>{{ getFormVerb(word.encoding.charAt(2)) }}</span><br>
             <span>{{ getTenseVerb(word.encoding.charAt(3)) }}</span><br>
-            <span>{{ getPersonVerb(word.encoding.charAt(4)) }}</span><br>
+            <span>{{ getPerson(word.encoding.charAt(4)) }}</span><br>
             <span>{{ getNumber(word.encoding.charAt(5)) }}</span><br>
             <span>{{ getGender(word.encoding.charAt(6)) }}</span><br>
             <span>{{ getVoiceVerb(word.encoding.charAt(7)) }}</span><br>
@@ -51,22 +57,50 @@
           </div>
           <div v-else-if="word.encoding.charAt(0) === 'A'">
             <span>{{ getTypeAdjective(word.encoding.charAt(1)) }}</span><br>
-            <span>{{ getDegreeAdjective(word.encoding.charAt(2)) }}</span><br>
+            <span>{{ getDegree(word.encoding.charAt(2)) }}</span><br>
             <span>{{ getGender(word.encoding.charAt(3)) }}</span><br>
             <span>{{ getNumber(word.encoding.charAt(4)) }}</span><br>
             <span>{{ getDefiniteness(word.encoding.charAt(6)) }}</span>
           </div>
-          <!--        <div v-else-if="word.encoding.charAt(0) === 'P'">-->
-          <!--          <span>{{word.encoding.charAt(1))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(2))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(3))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(4))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(5))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(6))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(7))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(8))}}</span>-->
-          <!--          <span>{{word.encoding.charAt(9))}}</span>-->
-          <!--        </div>-->
+          <div v-else-if="word.encoding.charAt(0) === 'P'">
+            <span>{{ getTypePronoun(word.encoding.charAt(1)) }}</span>
+            <span>{{ getPerson(word.encoding.charAt(2)) }}</span>
+            <span>{{ getGender(word.encoding.charAt(3)) }}</span>
+            <span>{{ getNumber(word.encoding.charAt(4)) }}</span>
+            <span>{{ getCase(word.encoding.charAt(5)) }}</span>
+            <span>{{ getNumber(word.encoding.charAt(6)) }}</span>
+            <span>{{ getGender(word.encoding.charAt(7)) }}</span>
+            <span>{{ getYesNo(word.encoding.charAt(8)) }}</span>
+            <span>{{ getDefiniteness(word.encoding.charAt(11)) }}</span>
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'R'">
+            <span>{{ getTypeAdverb(word.encoding.charAt(1)) }}</span>
+            <span>{{ getDegree(word.encoding.charAt(2)) }}</span>
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'S'">
+            <span>{{ getTypeAdposition(word.encoding.charAt(1)) }}</span>
+            <span>{{ getFormation(word.encoding.charAt(2)) }}</span>
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'C'">
+            <span>{{ getTypeConjunction(word.encoding.charAt(1)) }}</span>
+            <span>{{ getFormation(word.encoding.charAt(2)) }}</span>
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'M'">
+            <span>{{ getTypeNumeral(word.encoding.charAt(1)) }}</span>
+            <span>{{ getGender(word.encoding.charAt(2)) }}</span>
+            <span>{{ getNumber(word.encoding.charAt(3)) }}</span>
+            <span>{{ getFormNumeral(word.encoding.charAt(5)) }}</span>
+            <span>{{ getDefiniteness(word.encoding.charAt(6)) }}</span>
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'Q'">
+            <span>{{ getFormation(word.encoding.charAt(2)) }}</span>
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'I'">
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'Y'">
+          </div>
+          <div v-else-if="word.encoding.charAt(0) === 'X'">
+          </div>
         </div>
       </div>
     </div>
@@ -79,6 +113,7 @@
 <script>
 
 import axios from 'axios'
+import {TokenService} from "@/services/token";
 
 export default {
   name: 'Home',
@@ -88,37 +123,37 @@ export default {
       limit: '',
       offset: '',
       wordForSearching: '',
-      tmpSearching: ''
+      tmpSearching: '',
+      token: TokenService.getToken()
     }
   },
   mounted() {
-    // this.getWords(this.limit, this.offset)
+    this.setEnter()
   },
   methods: {
     getWords(limit, offset) {
+      this.tmpSearching = "Се вчитува..."
       axios({
         method: 'get',
-        url: 'http://127.0.0.1:8000/words/?limit=' + limit + '&offset=' + offset,
-        auth: {
-          username: 'admin',
-          password: 'admin'
-        }
-      }).then(response => this.words = response.data.results)
+        url: 'http://127.0.0.1:8000/words/?limit=' + limit + '&offset=' + offset
+      }).then(response => {
+        this.words = response.data.results
+        this.tmpSearching = ""
+        this.limit = ''
+        this.offset = ''
+      })
           // eslint-disable-next-line no-unused-vars
           .catch(error => this.words = [{word: "No words"}]);
     },
-    getSingleWord(word){
-      this.tmpSearching = "Searching..."
+    getSingleWord(word) {
+      this.tmpSearching = "Се вчитува..."
       axios({
         method: 'get',
-        url: 'http://127.0.0.1:8000/words/?search=' + word,
-        auth: {
-          username: 'admin',
-          password: 'admin'
-        }
+        url: 'http://127.0.0.1:8000/words/?search=' + word
       }).then(response => {
         this.words = response.data.results
         this.tmpSearching = ''
+        this.wordForSearching = ''
       })
           // eslint-disable-next-line no-unused-vars
           .catch(error => this.words = [{word: "No words"}]);
@@ -223,7 +258,7 @@ export default {
           return ""
       }
     },
-    getPersonVerb(l) {
+    getPerson(l) {
       switch (l) {
         case '1':
           return "прво"
@@ -277,7 +312,7 @@ export default {
           return ""
       }
     },
-    getDegreeAdjective(l) {
+    getDegree(l) {
       switch (l) {
         case 'p':
           return "позитивна"
@@ -315,8 +350,89 @@ export default {
           return ""
       }
     },
+    getTypeAdverb(l) {
+      switch (l) {
+        case 'g':
+          return "општ?"
+        case 'a':
+          return "придавски?"
+        case 'v':
+          return "глаголски"
+        default :
+          return ""
+      }
+    },
+    getTypeAdposition(l) {
+      return l === 'p' ? "предлог" : ""
+    },
+    getFormation(l) {
+      switch (l) {
+        case 's':
+          return "едноставен - прост"
+        case 'c':
+          return "соединет (compound) - сложен"
+        default :
+          return ""
+      }
+    },
+    getTypeConjunction(l) {
+      switch (l) {
+        case 'c':
+          return "приреден"
+        case 's':
+          return "подреден"
+        default :
+          return ""
+      }
+    },
+    getTypeNumeral(l) {
+      switch (l) {
+        case 'c':
+          return "кардинален"
+        case 'o':
+          return "реден"
+        case 'l':
+          return "збирен? - collect"
+        case 's':
+          return "специјален"
+        default :
+          return ""
+      }
+    },
+    getFormNumeral(l) {
+      switch (l) {
+        case 'd':
+          return "цифра"
+        case 'r':
+          return "римски"
+        case 'l':
+          return "буква"
+        default :
+          return ""
+      }
+    },
+    setEnter(){
+      document.querySelector("#wordInput").addEventListener("keyup", event => {
+        if(event.key !== "Enter") return;
+        document.querySelector("#btnFS").click();
+        event.preventDefault();
+      });
 
+      document.querySelector("#limitInput").addEventListener("keyup", event => {
+        if(event.key !== "Enter") return;
+        document.querySelector("#btnP").click();
+        event.preventDefault();
+      });
+
+      document.querySelector("#offsetInput").addEventListener("keyup", event => {
+        if(event.key !== "Enter") return;
+        document.querySelector("#btnP").click();
+        event.preventDefault();
+      });
+    }
   }
 }
+
+
 </script>
 <!--<style lang="scss">-->
